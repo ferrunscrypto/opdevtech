@@ -3,6 +3,7 @@ import { useWalletConnect } from '@btc-vision/walletconnect';
 import { Header } from './components/Header';
 import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 
 export function App() {
     const { walletAddress } = useWalletConnect();
@@ -14,6 +15,7 @@ export function App() {
                 <Routes>
                     <Route path="/" element={walletAddress ? <DashboardPage /> : <LandingPage />} />
                     <Route path="/profile/:address" element={<DashboardPage />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="*" element={walletAddress ? <DashboardPage /> : <LandingPage />} />
                 </Routes>
             </div>

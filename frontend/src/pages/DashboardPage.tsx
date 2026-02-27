@@ -10,11 +10,11 @@ import { BACKEND_URL } from '../config/contracts';
 
 export function DashboardPage() {
     const { address: paramAddress } = useParams<{ address?: string }>();
-    const { walletAddress, network } = useWalletConnect();
+    const { walletAddress, network, address: walletAddressObj } = useWalletConnect();
     const viewAddress = paramAddress ?? walletAddress ?? '';
 
     const provider = useProvider(network);
-    const { loading, error, loadScan, loadProfile, loadMintedBadges, claimBadge, setProfile } = useDevTech(provider, network);
+    const { loading, error, loadScan, loadProfile, loadMintedBadges, claimBadge, setProfile, endorse } = useDevTech(provider, network, walletAddressObj ?? null, walletAddress ?? null);
 
     const [scan,        setScan]        = useState<ScanResult | null>(null);
     const [profile,     setProfileData] = useState<ProfileData | null>(null);
@@ -28,20 +28,36 @@ export function DashboardPage() {
     const [editingName,   setEditingName]   = useState(false);
     const [nameInput,     setNameInput]     = useState('');
     const [refreshTick,   setRefreshTick]   = useState(0);
+    const [scanning,      setScanning]      = useState(false);
+    const [endorsing,     setEndorsing]     = useState(false);
 
     // Load everything when address changes
     useEffect(() => {
         if (!viewAddress) return;
 
         async function load() {
-            const [scanData, profileData, mintedBadges] = await Promise.all([
-                loadScan(viewAddress),
-                loadProfile(viewAddress),
-                loadMintedBadges(viewAddress),
-            ]);
-            setScan(scanData);
-            setProfileData(profileData);
-            setEarnedIds(mintedBadges);
+            setScanning(true);
+            try {
+                const [scanData, profileData, mintedBadges] = await Promise.all([
+                    loadScan(viewAddress),
+                    loadProfile(viewAddress),
+                    loadMintedBadges(viewAddress),
+                ]);
+                setScan(scanData);
+                setProfileData(profileData);
+                setEarnedIds(mintedBadges);
+
+                // Update leaderboard — only addresses with minted badges appear
+                if (scanData && mintedBadges.length > 0) {
+                    fetch(`${BACKEND_URL}/api/leaderboard`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scan: scanData, badgeCount: mintedBadges.length }),
+                    }).catch(() => {});
+                }
+            } finally {
+                setScanning(false);
+            }
         }
         void load();
     }, [viewAddress, provider, refreshTick]);
@@ -134,30 +150,64 @@ export function DashboardPage() {
     const handleShare = useCallback(() => {
         const score = (profile ? Number(profile.score) : 0) + (scan?.score ?? 0);
         const count = earnedIds.length;
-        const tweet = `I scored ${score.toLocaleString()} pts on dev.tech!\n\n`
+        const tweet = `I scored ${score.toLocaleString()} pts on opdev.tech!\n\n`
             + `Badges collected: ${count}/15\n\n`
-            + `Verify on-chain: https://devtech.pages.dev/profile/${viewAddress}\n\n`
-            + `#Bitcoin #OPNet #DevTech`;
+            + `Verify on-chain: https://opdev-tech.pages.dev/profile/${viewAddress}\n\n`
+            + `#Bitcoin #OPNet #opdevtech`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank');
     }, [profile, scan, earnedIds, viewAddress]);
 
     const handleMint = useCallback(async (badgeId: number) => {
+        if (!walletAddress) {
+            setErrMsg('Connect your wallet first to mint badges.');
+            return;
+        }
         if (walletAddress !== viewAddress) {
-            alert('Connect the wallet that owns this profile to mint badges.');
+            setErrMsg('Connect the wallet that owns this profile to mint badges.');
             return;
         }
         setMintingId(badgeId);
         setTxMsg(null);
-        const txId = await claimBadge(badgeId);
-        setMintingId(null);
-        if (txId) {
-            const badgeName = BADGE_META.find(b => b.id === badgeId)?.name ?? `Badge #${badgeId}`;
-            setTxMsg(`"${badgeName}" minted! TX: ${txId.slice(0, 16)}...`);
-            setTimeout(() => setRefreshTick(t => t + 1), 4000);
+        setErrMsg(null);
+        try {
+            const txId = await claimBadge(badgeId);
+            if (txId) {
+                const badgeName = BADGE_META.find(b => b.id === badgeId)?.name ?? `Badge #${badgeId}`;
+                setTxMsg(`"${badgeName}" minted! TX: ${txId.slice(0, 16)}...`);
+                setTimeout(() => setRefreshTick(t => t + 1), 4000);
+            }
+            // error is displayed via the hook's error state
+        } catch (e) {
+            setErrMsg(`Mint error: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+            setMintingId(null);
         }
     }, [walletAddress, viewAddress, claimBadge]);
 
-    const eligibleIds = scan?.eligibleBadges ?? [];
+    const handleEndorse = useCallback(async () => {
+        if (!walletAddress || walletAddress === viewAddress) return;
+        setEndorsing(true);
+        setTxMsg(null);
+        try {
+            const txId = await endorse(viewAddress);
+            if (txId) {
+                setTxMsg(`Endorsed! TX: ${txId.slice(0, 16)}...`);
+                setTimeout(() => setRefreshTick(t => t + 1), 4000);
+            }
+        } finally {
+            setEndorsing(false);
+        }
+    }, [walletAddress, viewAddress, endorse]);
+
+    const isOwnProfile = walletAddress === viewAddress;
+
+    // Merge backend eligibility with on-chain endorsement check (badge 12)
+    const eligibleIds = (() => {
+        const ids = [...(scan?.eligibleBadges ?? [])];
+        const endorseCount = profile ? Number(profile.endorseCount) : 0;
+        if (endorseCount >= 3 && !ids.includes(12)) ids.push(12);
+        return ids;
+    })();
 
     if (!viewAddress) {
         return (
@@ -168,7 +218,7 @@ export function DashboardPage() {
     }
 
     return (
-        <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
             {/* Status messages */}
             {txMsg && (
                 <div style={{ marginBottom: '1rem', padding: '10px 16px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '8px', fontFamily: 'monospace', fontSize: '12px', color: '#4ade80' }}>
@@ -186,7 +236,7 @@ export function DashboardPage() {
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 380px) 1fr', gap: '24px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 340px) 1fr', gap: '28px', alignItems: 'start' }}>
                 {/* Left: Profile card */}
                 <div>
                     <ProfileCard
@@ -203,6 +253,10 @@ export function DashboardPage() {
                         onLinkTwitter={handleLinkTwitter}
                         onShare={handleShare}
                         onRescan={() => setRefreshTick(t => t + 1)}
+                        scanning={scanning}
+                        isOwnProfile={isOwnProfile}
+                        onEndorse={handleEndorse}
+                        endorsing={endorsing}
                     />
 
                     {/* Loading indicator */}

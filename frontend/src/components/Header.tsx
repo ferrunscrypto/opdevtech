@@ -24,24 +24,28 @@ export function Header() {
         <header style={{
             position: 'sticky', top: 0, zIndex: 50,
             backdropFilter: 'blur(12px)',
-            background: 'rgba(10,11,15,0.92)',
-            borderBottom: '1px solid rgba(59,130,246,0.15)',
+            background: 'rgba(12,15,26,0.92)',
+            borderBottom: '1px solid rgba(99,130,200,0.1)',
         }}>
-            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1rem', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 {/* Logo */}
                 <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
                     <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
-                        <circle cx="32" cy="32" r="30" fill="#0a0b0f" stroke="#3b82f6" strokeWidth="3"/>
+                        <circle cx="32" cy="32" r="30" fill="#0c0f1a" stroke="#3b82f6" strokeWidth="3"/>
                         <text x="32" y="42" textAnchor="middle" fill="#3b82f6" fontSize="28" fontFamily="monospace" fontWeight="bold">D</text>
                     </svg>
                     <span style={{ color: '#3b82f6', fontFamily: 'Courier New, monospace', fontSize: '20px', fontWeight: 700, letterSpacing: '0.05em', textShadow: '0 0 10px rgba(59,130,246,0.5)' }}>
-                        dev.tech
+                        opdev.tech
                     </span>
                 </a>
 
                 {/* Nav links */}
                 <nav style={{ display: 'flex', gap: '4px' }}>
-                    <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                    <a href="/leaderboard"
+                        style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '11px', padding: '6px 12px', textDecoration: 'none', letterSpacing: '0.1em' }}>
+                        LEADERBOARD
+                    </a>
+                    <a href="https://github.com/ferrunscrypto/opdevtech" target="_blank" rel="noopener noreferrer"
                         style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '11px', padding: '6px 12px', textDecoration: 'none', letterSpacing: '0.1em' }}>
                         DOCS
                     </a>
@@ -71,7 +75,7 @@ export function Header() {
                                 <>
                                     <div style={{
                                         position: 'absolute', top: '100%', right: 0, marginTop: '4px',
-                                        background: '#0f1117', border: '1px solid rgba(59,130,246,0.2)',
+                                        background: '#141827', border: '1px solid rgba(99,130,200,0.12)',
                                         borderRadius: '10px', overflow: 'hidden', minWidth: '180px', zIndex: 100,
                                         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                                     }}>

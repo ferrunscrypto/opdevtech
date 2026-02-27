@@ -1,0 +1,20 @@
+[
+  {
+    "address": "opt1plplqjhkt9fdj4h5z66tpwhu2srjjsyxttw3lx3zydqdyhz5u3qhqnmpy4z",
+    "score": 350,
+    "totalTxs": 62,
+    "deployments": 0,
+    "swaps": 0,
+    "badgeCount": 1,
+    "lastScan": 1772221011728
+  },
+  {
+    "address": "opt1pq45c7qx5snvrgfv9drnlaspf2thzmrhzj5gr6cuk289n7dekaukqe7ps2r",
+    "score": 3069,
+    "totalTxs": 128,
+    "deployments": 23,
+    "swaps": 1,
+    "badgeCount": 1,
+    "lastScan": 1772222474280
+  }
+]

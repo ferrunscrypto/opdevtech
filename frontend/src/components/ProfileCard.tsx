@@ -14,6 +14,10 @@ interface ProfileCardProps {
     onLinkTwitter: () => void;
     onShare: () => void;
     onRescan?: () => void;
+    scanning?: boolean;
+    isOwnProfile?: boolean;
+    onEndorse?: () => void;
+    endorsing?: boolean;
 }
 
 function scoreLevel(score: number): { level: number; label: string; next: number } {
@@ -26,7 +30,13 @@ function scoreLevel(score: number): { level: number; label: string; next: number
     return              { level: 7, label: 'OPNet Legend', next: score };
 }
 
-export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp, displayName, editingName, nameInput, onNameInputChange, onEditName, onLinkTwitter, onShare, onRescan }: ProfileCardProps) {
+const card = {
+    background: '#141827',
+    border: '1px solid rgba(99, 130, 200, 0.12)',
+    borderRadius: '16px',
+};
+
+export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp, displayName, editingName, nameInput, onNameInputChange, onEditName, onLinkTwitter, onShare, onRescan, scanning, isOwnProfile, onEndorse, endorsing }: ProfileCardProps) {
     const onChainScore = profile ? Number(profile.score) : 0;
     const scanScore    = scan?.score ?? 0;
     const totalScore   = onChainScore + scanScore;
@@ -39,9 +49,7 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
 
     return (
         <div style={{
-            background: 'linear-gradient(135deg, #0f1117 0%, #111827 100%)',
-            border: '1px solid rgba(59,130,246,0.2)',
-            borderRadius: '16px',
+            ...card,
             padding: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
@@ -50,9 +58,15 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
             {/* Top row: PFP + identity */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 {twitterPfp ? (
-                    <img src={twitterPfp} alt="PFP" style={{ width: '72px', height: '72px', borderRadius: '50%', border: '2px solid rgba(59,130,246,0.4)', objectFit: 'cover' }} />
+                    <img src={twitterPfp} alt="PFP" style={{ width: '72px', height: '72px', borderRadius: '50%', border: '2px solid rgba(59,130,246,0.25)', objectFit: 'cover' }} />
                 ) : (
-                    <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', border: '2px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: '#3b82f6' }}>
+                    <div style={{
+                        width: '72px', height: '72px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #1e2a4a 0%, #1a2040 100%)',
+                        border: '2px solid rgba(59,130,246,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '28px', color: '#60a5fa',
+                    }}>
                         {(displayName ?? address.charAt(4)).charAt(0).toUpperCase()}
                     </div>
                 )}
@@ -66,17 +80,17 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                                 autoFocus
                                 style={{
                                     fontFamily: 'monospace', fontWeight: 700, fontSize: '16px', color: '#e2e8f0',
-                                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(59,130,246,0.4)',
-                                    borderRadius: '4px', padding: '2px 6px', outline: 'none', width: '140px',
+                                    background: '#0f1220', border: '1px solid rgba(59,130,246,0.3)',
+                                    borderRadius: '6px', padding: '3px 8px', outline: 'none', width: '140px',
                                 }}
                             />
                         ) : (
-                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '16px', color: '#e2e8f0' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '16px', color: '#f1f5f9' }}>
                                 {displayName ? (twitterHandle ? `@${displayName}` : displayName) : 'Anonymous'}
                             </span>
                         )}
                         <button onClick={onEditName} style={{
-                            background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                            background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
                             fontFamily: 'monospace', fontSize: '11px', padding: '2px 4px',
                         }}>
                             {editingName ? 'save' : 'edit'}
@@ -87,18 +101,18 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                             @{twitterHandle}
                         </div>
                     )}
-                    <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#6b7280', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748b', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {shortAddr}
                     </div>
-                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '4px', color: '#3b82f6', fontFamily: 'monospace' }}>
+                    <div style={{ marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', color: '#60a5fa', fontFamily: 'monospace' }}>
                             Lv.{level} {label}
                         </span>
-                        <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '4px', color: '#4ade80', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px', color: '#4ade80', fontFamily: 'monospace' }}>
                             {badgeCount} badges
                         </span>
                         {endorseCount > 0 && (
-                            <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '4px', color: '#a855f7', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '10px', color: '#a855f7', fontFamily: 'monospace' }}>
                                 {endorseCount} endorsements
                             </span>
                         )}
@@ -109,30 +123,30 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
             {/* Score bar */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: 'monospace' }}>Score</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#3b82f6', fontFamily: 'monospace' }}>{totalScore.toLocaleString()} pts</span>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>Score</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#60a5fa', fontFamily: 'monospace' }}>{totalScore.toLocaleString()} pts</span>
                 </div>
-                <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #3b82f6, #60a5fa)', borderRadius: '3px', transition: 'width 0.8s ease' }} />
+                <div style={{ height: '5px', background: '#0f1220', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #3b82f6, #818cf8)', borderRadius: '3px', transition: 'width 0.8s ease' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                    <span style={{ fontSize: '10px', color: '#4b5563', fontFamily: 'monospace' }}>0</span>
-                    <span style={{ fontSize: '10px', color: '#4b5563', fontFamily: 'monospace' }}>{next.toLocaleString()}</span>
+                    <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}>0</span>
+                    <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}>{next.toLocaleString()}</span>
                 </div>
             </div>
 
             {/* Stats row */}
             {scan && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                     {[
-                        { label: 'Deployments', value: scan.deployments },
-                        { label: 'Swaps',        value: scan.swaps      },
-                        { label: 'Total TXs',    value: scan.totalTxs   },
-                        { label: 'First Block',  value: scan.firstBlock > 0 ? `#${scan.firstBlock.toLocaleString()}` : '—' },
+                        { label: 'Deploys', value: scan.deployments },
+                        { label: 'Swaps',   value: scan.swaps      },
+                        { label: 'TXs',     value: scan.totalTxs   },
+                        { label: 'Block',   value: scan.firstBlock > 0 ? `#${scan.firstBlock.toLocaleString()}` : '—' },
                     ].map(s => (
-                        <div key={s.label} style={{ textAlign: 'center' }}>
-                            <div style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: '#e2e8f0' }}>{s.value}</div>
-                            <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#6b7280', marginTop: '2px' }}>{s.label}</div>
+                        <div key={s.label} style={{ textAlign: 'center', padding: '10px 4px', background: '#0f1220', borderRadius: '10px' }}>
+                            <div style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, color: '#e2e8f0' }}>{s.value}</div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#64748b', marginTop: '3px' }}>{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -141,31 +155,69 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {!twitterHandle && (
-                    <button onClick={onLinkTwitter} style={{
-                        flex: 1, minWidth: '130px', padding: '8px 14px',
-                        background: 'rgba(29,161,242,0.1)', border: '1px solid rgba(29,161,242,0.3)',
-                        borderRadius: '8px', color: '#1da1f2', fontFamily: 'Courier New, monospace',
-                        fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
-                    }}>
-                        Link Twitter / X
+                    <button
+                        onClick={onLinkTwitter}
+                        className="profile-btn"
+                        style={{
+                            flex: 1, minWidth: '100px', padding: '10px 14px',
+                            background: 'rgba(29,161,242,0.18)', border: '1px solid rgba(29,161,242,0.4)',
+                            borderRadius: '10px', color: '#1da1f2', fontFamily: 'monospace',
+                            fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        Link X
                     </button>
                 )}
-                <button onClick={onShare} style={{
-                    flex: 1, minWidth: '130px', padding: '8px 14px',
-                    background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
-                    borderRadius: '8px', color: '#3b82f6', fontFamily: 'Courier New, monospace',
-                    fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
-                }}>
-                    Share Score
+                <button
+                    onClick={onShare}
+                    className="profile-btn"
+                    style={{
+                        flex: 1, minWidth: '100px', padding: '10px 14px',
+                        background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.4)',
+                        borderRadius: '10px', color: '#60a5fa', fontFamily: 'monospace',
+                        fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                    }}
+                >
+                    Share
                 </button>
-                <button onClick={onRescan} style={{
-                    flex: 1, minWidth: '130px', padding: '8px 14px',
-                    background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)',
-                    borderRadius: '8px', color: '#4ade80', fontFamily: 'Courier New, monospace',
-                    fontSize: '11px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
-                }}>
-                    Rescan Chain
+                <button
+                    onClick={onRescan}
+                    disabled={scanning}
+                    className="profile-btn"
+                    style={{
+                        flex: 1, minWidth: '100px', padding: '10px 14px',
+                        background: scanning ? 'rgba(74,222,128,0.1)' : 'rgba(74,222,128,0.18)',
+                        border: `1px solid rgba(74,222,128,${scanning ? '0.2' : '0.4'})`,
+                        borderRadius: '10px', color: '#4ade80', fontFamily: 'monospace',
+                        fontSize: '11px', fontWeight: 700,
+                        cursor: scanning ? 'wait' : 'pointer',
+                        opacity: scanning ? 0.6 : 1,
+                        transition: 'all 0.15s ease',
+                    }}
+                >
+                    {scanning ? 'Scanning...' : 'Rescan'}
                 </button>
+                {!isOwnProfile && onEndorse && (
+                    <button
+                        onClick={onEndorse}
+                        disabled={endorsing}
+                        className="profile-btn"
+                        style={{
+                            flex: 1, minWidth: '100px', padding: '10px 14px',
+                            background: endorsing ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.18)',
+                            border: `1px solid rgba(168,85,247,${endorsing ? '0.2' : '0.4'})`,
+                            borderRadius: '10px', color: '#a855f7', fontFamily: 'monospace',
+                            fontSize: '11px', fontWeight: 700,
+                            cursor: endorsing ? 'wait' : 'pointer',
+                            opacity: endorsing ? 0.6 : 1,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        {endorsing ? 'Endorsing...' : 'Endorse'}
+                    </button>
+                )}
             </div>
         </div>
     );

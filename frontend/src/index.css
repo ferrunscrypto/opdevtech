@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 :root {
-    --bg: #0a0b0f;
-    --bg2: #0f1117;
-    --border: rgba(59, 130, 246, 0.15);
+    --bg: #0c0f1a;
+    --bg-card: #141827;
+    --bg-card-hover: #1a1f32;
+    --bg-inset: #0f1220;
+    --border: rgba(99, 130, 200, 0.12);
+    --border-light: rgba(99, 130, 200, 0.08);
     --text: #e2e8f0;
-    --muted: #6b7280;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
     --blue: #3b82f6;
     --green: #4ade80;
     --gold: #eab308;
@@ -26,3 +30,26 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+
+/* Interactive buttons — hover/active feedback */
+.profile-btn:not(:disabled):hover {
+    filter: brightness(1.3);
+    transform: translateY(-1px);
+}
+.profile-btn:not(:disabled):active {
+    filter: brightness(0.95);
+    transform: translateY(0);
+}
+
+/* Badge mint button */
+.mint-btn:not(:disabled) {
+    cursor: pointer;
+}
+.mint-btn:not(:disabled):hover {
+    filter: brightness(1.4);
+    transform: translateY(-1px);
+}
+.mint-btn:not(:disabled):active {
+    filter: brightness(0.95);
+    transform: translateY(0);
+}

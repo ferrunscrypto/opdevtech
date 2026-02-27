@@ -1,101 +1,139 @@
 // ABI for dev.tech contract — keep in sync with contract build
-// Selectors are computed from function names, so names must match exactly.
+// Uses proper opnet ABI types for correct method proxy generation.
 
-export const DevTechABI = [
+import { ABIDataTypes, BitcoinAbiTypes, BitcoinInterfaceAbi } from 'opnet';
+
+export const DevTechABI: BitcoinInterfaceAbi = [
+    // ── Write Methods ────────────────────────────────────────────
+
     // Profile
     {
         name: '_setProfile',
+        type: BitcoinAbiTypes.Function,
+        constant: false,
         inputs: [
-            { name: 'handle', type: 'string' },
-            { name: 'pfpUrl', type: 'string' },
+            { name: 'handle', type: ABIDataTypes.STRING },
+            { name: 'pfpUrl', type: ABIDataTypes.STRING },
         ],
-        outputs: [{ name: 'success', type: 'bool' }],
-    },
-    {
-        name: '_getProfile',
-        inputs: [{ name: 'addr', type: 'address' }],
-        outputs: [
-            { name: 'handleHash',   type: 'uint256' },
-            { name: 'pfpHash',      type: 'uint256' },
-            { name: 'score',        type: 'uint256' },
-            { name: 'badgeCount',   type: 'uint256' },
-            { name: 'endorseCount', type: 'uint256' },
-        ],
+        outputs: [{ name: 'success', type: ABIDataTypes.BOOL }],
     },
 
     // Badges
     {
         name: '_claimBadge',
-        inputs: [{ name: 'badgeId', type: 'uint256' }],
-        outputs: [{ name: 'tokenId', type: 'uint256' }],
-    },
-    {
-        name: '_hasClaimed',
-        inputs: [
-            { name: 'addr',    type: 'address' },
-            { name: 'badgeId', type: 'uint256' },
-        ],
-        outputs: [{ name: 'claimed', type: 'bool' }],
-    },
-    {
-        name: '_getBadgeType',
-        inputs: [{ name: 'tokenId', type: 'uint256' }],
-        outputs: [{ name: 'badgeId', type: 'uint256' }],
-    },
-    {
-        name: '_getBadgeInfo',
-        inputs: [{ name: 'badgeId', type: 'uint256' }],
-        outputs: [
-            { name: 'exists',     type: 'bool'    },
-            { name: 'scoreValue', type: 'uint256' },
-        ],
-    },
-    {
-        name: '_getBadgeCount',
-        inputs: [],
-        outputs: [{ name: 'count', type: 'uint256' }],
-    },
-    {
-        name: '_registerBadge',
-        inputs: [
-            { name: 'badgeId',    type: 'uint256' },
-            { name: 'scoreValue', type: 'uint256' },
-        ],
-        outputs: [{ name: 'success', type: 'bool' }],
+        type: BitcoinAbiTypes.Function,
+        constant: false,
+        inputs: [{ name: 'badgeId', type: ABIDataTypes.UINT256 }],
+        outputs: [{ name: 'tokenId', type: ABIDataTypes.UINT256 }],
     },
 
     // Endorse
     {
         name: '_endorse',
-        inputs: [{ name: 'target', type: 'address' }],
-        outputs: [{ name: 'newCount', type: 'uint256' }],
+        type: BitcoinAbiTypes.Function,
+        constant: false,
+        inputs: [{ name: 'target', type: ABIDataTypes.ADDRESS }],
+        outputs: [{ name: 'newCount', type: ABIDataTypes.UINT256 }],
+    },
+
+    // Badge registry (deployer only)
+    {
+        name: '_registerBadge',
+        type: BitcoinAbiTypes.Function,
+        constant: false,
+        inputs: [
+            { name: 'badgeId', type: ABIDataTypes.UINT256 },
+            { name: 'scoreValue', type: ABIDataTypes.UINT256 },
+        ],
+        outputs: [{ name: 'success', type: ABIDataTypes.BOOL }],
+    },
+
+    // ── Read Methods ─────────────────────────────────────────────
+
+    // Profile
+    {
+        name: '_getProfile',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'addr', type: ABIDataTypes.ADDRESS }],
+        outputs: [
+            { name: 'handleHash', type: ABIDataTypes.UINT256 },
+            { name: 'pfpHash', type: ABIDataTypes.UINT256 },
+            { name: 'score', type: ABIDataTypes.UINT256 },
+            { name: 'badgeCount', type: ABIDataTypes.UINT256 },
+            { name: 'endorseCount', type: ABIDataTypes.UINT256 },
+        ],
+    },
+
+    // Badge queries
+    {
+        name: '_hasClaimed',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [
+            { name: 'addr', type: ABIDataTypes.ADDRESS },
+            { name: 'badgeId', type: ABIDataTypes.UINT256 },
+        ],
+        outputs: [{ name: 'claimed', type: ABIDataTypes.BOOL }],
+    },
+    {
+        name: '_getBadgeType',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'tokenId', type: ABIDataTypes.UINT256 }],
+        outputs: [{ name: 'badgeId', type: ABIDataTypes.UINT256 }],
+    },
+    {
+        name: '_getBadgeInfo',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'badgeId', type: ABIDataTypes.UINT256 }],
+        outputs: [
+            { name: 'exists', type: ABIDataTypes.BOOL },
+            { name: 'scoreValue', type: ABIDataTypes.UINT256 },
+        ],
+    },
+    {
+        name: '_getBadgeCount',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [],
+        outputs: [{ name: 'count', type: ABIDataTypes.UINT256 }],
     },
 
     // OP721 standard
     {
         name: 'balanceOf',
-        inputs: [{ name: 'owner', type: 'address' }],
-        outputs: [{ name: 'balance', type: 'uint256' }],
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'owner', type: ABIDataTypes.ADDRESS }],
+        outputs: [{ name: 'balance', type: ABIDataTypes.UINT256 }],
     },
     {
         name: 'tokenOfOwnerByIndex',
+        type: BitcoinAbiTypes.Function,
+        constant: true,
         inputs: [
-            { name: 'owner', type: 'address' },
-            { name: 'index', type: 'uint256' },
+            { name: 'owner', type: ABIDataTypes.ADDRESS },
+            { name: 'index', type: ABIDataTypes.UINT256 },
         ],
-        outputs: [{ name: 'tokenId', type: 'uint256' }],
+        outputs: [{ name: 'tokenId', type: ABIDataTypes.UINT256 }],
     },
     {
         name: 'tokenURI',
-        inputs: [{ name: 'tokenId', type: 'uint256' }],
-        outputs: [{ name: 'uri', type: 'string' }],
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'tokenId', type: ABIDataTypes.UINT256 }],
+        outputs: [{ name: 'uri', type: ABIDataTypes.STRING }],
     },
     {
         name: 'ownerOf',
-        inputs: [{ name: 'tokenId', type: 'uint256' }],
-        outputs: [{ name: 'owner', type: 'address' }],
+        type: BitcoinAbiTypes.Function,
+        constant: true,
+        inputs: [{ name: 'tokenId', type: ABIDataTypes.UINT256 }],
+        outputs: [{ name: 'owner', type: ABIDataTypes.ADDRESS }],
     },
-] as const;
+];
 
 // Badge metadata (mirrors contract static tables)
 export interface BadgeMeta {
@@ -120,7 +158,7 @@ export const BADGE_META: BadgeMeta[] = [
     { id: 10, name: 'Early Adopter',    track: 'OG',         color: '#eab308', requirement: 'First tx before block 100,000',   score: 150  },
     { id: 11, name: 'Linked',           track: 'Social',     color: '#a855f7', requirement: 'Twitter profile set on-chain',    score: 25   },
     { id: 12, name: 'Vouched',          track: 'Social',     color: '#a855f7', requirement: 'Endorsed by 3+ other addresses',  score: 100  },
-    { id: 13, name: 'Battle Hardened',  track: 'Resilience', color: '#ef4444', requirement: '10+ failed transactions',         score: 50   },
+    { id: 13, name: 'Battle Hardened',  track: 'Resilience', color: '#ef4444', requirement: '5+ failed transactions',          score: 50   },
     { id: 14, name: 'Diamond Hands',    track: 'Resilience', color: '#ef4444', requirement: '0 failed txs + 20+ successful',   score: 200  },
     { id: 15, name: 'OPNet Legend',     track: 'Master',     color: '#fbbf24', requirement: '5+ different badges held',        score: 1000 },
 ];

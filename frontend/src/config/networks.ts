@@ -55,7 +55,7 @@ export function getNetworkId(network: any): string {
     if (network === (networks as unknown as Record<string, Network>)['opnetTestnet']) return 'testnet';
     if (network === networks.regtest) return 'regtest';
 
-    console.warn('[dev.tech] Unknown network object:', JSON.stringify(network));
+    console.warn('[opdev.tech] Unknown network object:', JSON.stringify(network));
     return 'unknown';
 }
 

@@ -14,42 +14,30 @@ export interface ScanResult {
     eligibleBadges: number[];
 }
 
-// Badge requirement checks
 function computeEligibleBadges(r: ScanResult): number[] {
     const eligible: number[] = [];
-
-    // Builder
     if (r.deployments >= 1)  eligible.push(1);
     if (r.deployments >= 5)  eligible.push(2);
     if (r.deployments >= 10) eligible.push(3);
-
-    // Trader
     if (r.swaps >= 1)   eligible.push(4);
     if (r.swaps >= 10)  eligible.push(5);
     if (r.swaps >= 100) eligible.push(6);
-
-    // Gas
-    if (r.gasSpent >= 50_000n)  eligible.push(7);
-    if (r.gasSpent >= 500_000n) eligible.push(8);
-
-    // OG
+    if (r.gasSpent >= 5_000_000_000n)  eligible.push(7);   // ~5-10 txs worth of gas
+    if (r.gasSpent >= 50_000_000_000n) eligible.push(8);  // ~50-100 txs worth of gas
     if (r.firstBlock > 0 && r.firstBlock < 50_000)  eligible.push(9);
     if (r.firstBlock > 0 && r.firstBlock < 100_000) eligible.push(10);
-
-    // Social (11 requires on-chain profile set — checked separately)
-    // Vouched (12) requires endorsements — not scannable here
-
-    // Resilience
-    if (r.failedTxs >= 10) eligible.push(13);
-    if (r.failedTxs == 0 && r.totalTxs >= 20) eligible.push(14);
-
+    if (r.failedTxs >= 5) eligible.push(13);
+    if (r.failedTxs === 0 && r.totalTxs >= 20) eligible.push(14);
     return eligible;
 }
 
 function computeScore(r: Omit<ScanResult, 'score' | 'eligibleBadges'>): number {
+    // gasUsed is in raw gas units (very large numbers ~500M-1B per tx)
+    // Divide by 1B to normalize, so ~1 point per tx worth of gas
     return (r.deployments * 100)
         + (r.swaps * 10)
-        + Number(r.gasSpent / 10_000n);
+        + (r.totalTxs * 5)
+        + Number(r.gasSpent / 1_000_000_000n);
 }
 
 let provider: JSONRpcProvider | null = null;
@@ -64,8 +52,59 @@ function getProvider(): JSONRpcProvider {
     return provider;
 }
 
-export async function scanAddress(address: string): Promise<ScanResult> {
+// Cache scan results for 60s
+const scanCache = new Map<string, { result: ScanResult; ts: number }>();
+const CACHE_TTL = 60_000;
+
+// Cache bech32 → hex address resolution
+const hexAddrCache = new Map<string, string>();
+
+/** Resolve a bech32 address to its OPNet hex address via getPublicKeyInfo */
+async function resolveHexAddress(bech32Addr: string, isContract = false): Promise<string> {
+    const cached = hexAddrCache.get(bech32Addr);
+    if (cached) return cached;
+
     const rpc = getProvider();
+    try {
+        const info = await rpc.getPublicKeyInfo(bech32Addr, isContract);
+        // Address object — use toHex() or toString() to get the hex representation
+        const hex = (typeof info === 'string' ? info : info.toHex?.() ?? String(info)).toLowerCase();
+        hexAddrCache.set(bech32Addr, hex);
+        return hex;
+    } catch {
+        console.warn(`[scanner] Could not resolve hex address for ${bech32Addr}`);
+        return '';
+    }
+}
+
+/** Check if a tx was sent by the given hex address (tx.from match) */
+function txFromAddress(tx: Record<string, unknown>, hexAddr: string): boolean {
+    const from = String(tx.from ?? '').toLowerCase();
+    return from === hexAddr;
+}
+
+/** Check if a tx involves the given bech32 address in outputs */
+function txOutputsToAddress(tx: Record<string, unknown>, bech32Addr: string): boolean {
+    const outputs = tx.outputs as Array<{ scriptPubKey?: { address?: string } }> | undefined;
+    if (!outputs) return false;
+    const addrLower = bech32Addr.toLowerCase();
+    for (const out of outputs) {
+        const outAddr = out.scriptPubKey?.address ?? '';
+        if (outAddr.toLowerCase() === addrLower) return true;
+    }
+    return false;
+}
+
+export async function scanAddress(address: string): Promise<ScanResult> {
+    const cached = scanCache.get(address);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+        return cached.result;
+    }
+
+    const rpc = getProvider();
+
+    // Resolve bech32 → hex for matching tx.from
+    const hexAddr = await resolveHexAddress(address);
 
     let deployments = 0;
     let swaps       = 0;
@@ -74,58 +113,88 @@ export async function scanAddress(address: string): Promise<ScanResult> {
     let failedTxs   = 0;
     let firstBlock  = 0;
 
+    // Collect bech32 contract addresses from Interaction txs for post-scan swap resolution
+    const interactionContracts: string[] = [];
+
     try {
-        // Fetch transaction history
-        const txHistory = await rpc.getTransactionsByAddress(address, 0, 500).catch(() => null);
+        const currentBlock = await rpc.getBlockNumber();
+        const height = Number(currentBlock);
+        console.log(`[scanner] Scanning ${address.slice(0, 16)}... across ${height} blocks (hex=${hexAddr.slice(0, 18)})`);
 
-        if (txHistory && Array.isArray(txHistory)) {
-            for (const tx of txHistory) {
-                totalTxs++;
+        const BATCH = 10;
+        for (let b = 1; b <= height; b += BATCH) {
+            const promises: Promise<void>[] = [];
 
-                const blockNum = Number(tx.blockHeight ?? tx.blockNumber ?? 0);
-                if (blockNum > 0 && (firstBlock === 0 || blockNum < firstBlock)) {
-                    firstBlock = blockNum;
-                }
+            for (let i = b; i < b + BATCH && i <= height; i++) {
+                const blockNum = i;
+                promises.push(
+                    rpc.getBlock(BigInt(blockNum), true)
+                        .then(block => {
+                            if (!block?.transactions) return;
+                            for (const rawTx of block.transactions) {
+                                const tx = rawTx as unknown as Record<string, unknown>;
+                                const opType = String(tx.OPNetType ?? '');
 
-                if (tx.revert || tx.status === 'failed' || tx.status === false) {
-                    failedTxs++;
-                }
+                                // Skip Generic (plain BTC transfers)
+                                if (opType === 'Generic') continue;
 
-                // Accumulate gas (stored as sats)
-                const gas = BigInt(tx.gasFee ?? tx.fee ?? 0);
-                gasSpent += gas;
+                                // Match by tx.from (hex address) OR by output address (bech32)
+                                const isSender = hexAddr && txFromAddress(tx, hexAddr);
+                                const isRecipient = txOutputsToAddress(tx, address);
+                                if (!isSender && !isRecipient) continue;
 
-                // Detect deployments: tx.type === 'deployment' or contractAddress differs
-                if (tx.type === 'deployment' || tx.isDeployment === true) {
-                    deployments++;
-                }
+                                totalTxs++;
 
-                // Detect swaps: interaction with MotoSwap router
-                const to = (tx.to ?? '').toLowerCase();
-                if (to === MOTOSWAP_ROUTER.toLowerCase() ||
-                    to === MOTOSWAP_ROUTER.toLowerCase().replace('0x', '')) {
-                    swaps++;
-                }
+                                if (firstBlock === 0 || blockNum < firstBlock) {
+                                    firstBlock = blockNum;
+                                }
+
+                                // Gas (only count for txs the user sent)
+                                if (isSender) {
+                                    const gasHex = String(tx.gasUsed ?? '0x0');
+                                    gasSpent += BigInt(gasHex);
+                                }
+
+                                // Reverts
+                                if (tx.revert || tx.failed) failedTxs++;
+
+                                // Deployments
+                                if (opType === 'Deployment' && isSender) {
+                                    deployments++;
+                                }
+
+                                // Track Interaction contract addresses for swap detection
+                                if (opType === 'Interaction' && isSender) {
+                                    interactionContracts.push(String(tx.contractAddress ?? ''));
+                                }
+                            }
+                        })
+                        .catch(() => { /* skip failed block fetches */ })
+                );
+            }
+
+            await Promise.all(promises);
+        }
+
+        // Resolve unique contract bech32 addresses → hex and count MotoSwap swaps
+        const uniqueContracts = [...new Set(interactionContracts.filter(a => a.length > 0))];
+        for (const bech32Addr of uniqueContracts) {
+            const contractHex = await resolveHexAddress(bech32Addr, true);
+            if (contractHex === MOTOSWAP_ROUTER.toLowerCase()) {
+                swaps += interactionContracts.filter(a => a === bech32Addr).length;
             }
         }
+
+        console.log(`[scanner] Done: txs=${totalTxs} deploys=${deployments} swaps=${swaps} gas=${gasSpent}`);
     } catch (err) {
         console.warn(`[scanner] Error scanning ${address}:`, err);
-    }
-
-    // Fallback: try getTransactions if getTransactionsByAddress unavailable
-    if (totalTxs === 0) {
-        try {
-            const altHistory = await (rpc as unknown as Record<string, (addr: string) => Promise<unknown[]>>)
-                .getTransactions(address).catch(() => []);
-            totalTxs = altHistory.length;
-        } catch {
-            // silent
-        }
     }
 
     const partial = { address, deployments, swaps, gasSpent, totalTxs, failedTxs, firstBlock };
     const score   = computeScore(partial);
     const eligibleBadges = computeEligibleBadges({ ...partial, score, eligibleBadges: [] });
 
-    return { ...partial, score, eligibleBadges };
+    const result = { ...partial, score, eligibleBadges };
+    scanCache.set(address, { result, ts: Date.now() });
+    return result;
 }
