@@ -1,0 +1,26 @@
+{
+    "name": "devtech-backend",
+    "version": "1.0.0",
+    "description": "dev.tech backend — chain scanner + Twitter OAuth",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "start": "node --experimental-vm-modules dist/index.js",
+        "build": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@btc-vision/bitcoin": "latest",
+        "@btc-vision/transaction": "1.8.0-rc.9",
+        "cors": "^2.8.5",
+        "dotenv": "^17.3.1",
+        "express": "^5.1.0",
+        "opnet": "1.8.1-rc.12"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.18",
+        "@types/express": "^5.0.3",
+        "@types/node": "^24.0.0",
+        "tsx": "^4.19.4",
+        "typescript": "^5.9.3"
+    }
+}

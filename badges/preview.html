@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dev.tech Badge Collection</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0b0f; color: #e2e8f0; font-family: 'Courier New', Courier, monospace; min-height: 100vh; padding: 2rem 1rem; }
+  header { text-align: center; margin-bottom: 3rem; }
+  header h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; letter-spacing: 0.05em; color: #3b82f6; text-shadow: 0 0 30px rgba(59,130,246,0.4); margin-bottom: 0.5rem; }
+  header p { color: #6b7280; font-size: 13px; letter-spacing: 0.08em; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+  .stats { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
+  .stat { text-align: center; padding: 8px 20px; border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; background: rgba(59,130,246,0.05); }
+  .stat-val { font-size: 1.5rem; font-weight: 700; color: #3b82f6; }
+  .stat-lbl { font-size: 9px; color: #6b7280; letter-spacing: 0.1em; margin-top: 2px; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: #4b5563; margin: 2rem 0 1rem; border-left: 2px solid currentColor; padding-left: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 1100px; margin: 0 auto; }
+  @media (min-width: 600px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 900px)  { .grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 1100px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+  .card { background: #0f1117; border-radius: 14px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05); transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; cursor: default; }
+  .card:hover { transform: translateY(-3px); }
+  .badge-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: block; }
+  .track-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 9px; border-radius: 4px; border: 1px solid; }
+  .badge-name { font-size: 12px; font-weight: 700; color: #e2e8f0; text-align: center; line-height: 1.3; }
+  .requirement { font-size: 9px; color: #6b7280; text-align: center; line-height: 1.5; min-height: 28px; }
+  .score-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid; background: transparent; }
+  footer { text-align: center; margin-top: 4rem; padding: 2rem 1rem; border-top: 1px solid rgba(255,255,255,0.04); color: #374151; font-size: 10px; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>dev.tech Badge Collection</h1>
+  <p>15 soulbound achievement badges earned from real on-chain activity on Bitcoin via OPNet. Each badge is a non-transferable NFT with a fully on-chain SVG image.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-val">15</div><div class="stat-lbl">TOTAL BADGES</div></div>
+    <div class="stat"><div class="stat-val">5</div><div class="stat-lbl">TRACKS</div></div>
+    <div class="stat"><div class="stat-val">3,350</div><div class="stat-lbl">MAX SCORE</div></div>
+    <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">ON-CHAIN SVG</div></div>
+  </div>
+</header>
+
+<div style="max-width:1100px;margin:0 auto;">
+  <div id="badge-sections"></div>
+</div>
+
+<footer>DEV.TECH &middot; BUILT ON BITCOIN VIA OPNET &middot; SOULBOUND NFTS</footer>
+
+<script>
+var BADGES = [
+  { id:1,  name:'First Deploy',     track:'Builder',    color:'#3b82f6', req:'1+ contract deployed',           score:100  },
+  { id:2,  name:'Smart Architect',  track:'Builder',    color:'#3b82f6', req:'5+ contracts deployed',          score:250  },
+  { id:3,  name:'Contract Factory', track:'Builder',    color:'#3b82f6', req:'10+ contracts deployed',         score:500  },
+  { id:4,  name:'First Swap',       track:'Trader',     color:'#4ade80', req:'1+ swap on MotoSwap',            score:50   },
+  { id:5,  name:'Active Trader',    track:'Trader',     color:'#4ade80', req:'10+ swaps',                      score:150  },
+  { id:6,  name:'Swap Veteran',     track:'Trader',     color:'#4ade80', req:'100+ swaps',                     score:400  },
+  { id:7,  name:'Gas Burner',       track:'Gas',        color:'#f97316', req:'50k+ sats in gas spent',         score:75   },
+  { id:8,  name:'Inferno',          track:'Gas',        color:'#f97316', req:'500k+ sats in gas spent',        score:200  },
+  { id:9,  name:'OPNet OG',         track:'OG',         color:'#eab308', req:'First tx before block 50,000',   score:300  },
+  { id:10, name:'Early Adopter',    track:'OG',         color:'#eab308', req:'First tx before block 100,000',  score:150  },
+  { id:11, name:'Linked',           track:'Social',     color:'#a855f7', req:'Twitter handle set on-chain',    score:25   },
+  { id:12, name:'Vouched',          track:'Social',     color:'#a855f7', req:'Endorsed by 3+ addresses',       score:100  },
+  { id:13, name:'Battle Hardened',  track:'Resilience', color:'#ef4444', req:'10+ failed transactions',        score:50   },
+  { id:14, name:'Diamond Hands',    track:'Resilience', color:'#ef4444', req:'0 failed + 20+ successful txs',  score:200  },
+  { id:15, name:'OPNet Legend',     track:'Master',     color:'#fbbf24', req:'5+ different badges held',       score:1000 }
+];
+
+var trackOrder = ['Builder','Trader','Gas','OG','Social','Resilience','Master'];
+var sections = document.getElementById('badge-sections');
+
+trackOrder.forEach(function(track) {
+  var trackBadges = BADGES.filter(function(b) { return b.track === track; });
+  if (!trackBadges.length) return;
+  var color = trackBadges[0].color;
+
+  var titleEl = document.createElement('div');
+  titleEl.className = 'section-title';
+  titleEl.style.color = color;
+  titleEl.textContent = track.toUpperCase() + ' TRACK';
+  sections.appendChild(titleEl);
+
+  var grid = document.createElement('div');
+  grid.className = 'grid';
+  grid.style.marginBottom = '0';
+
+  trackBadges.forEach(function(b) {
+    var num = String(b.id).padStart(2, '0');
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderColor = color + '25';
+    card.addEventListener('mouseenter', function() {
+      card.style.borderColor = color + '55';
+      card.style.boxShadow = '0 0 20px ' + color + '20';
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.borderColor = color + '25';
+      card.style.boxShadow = 'none';
+    });
+
+    var img = document.createElement('img');
+    img.className = 'badge-img';
+    img.src = 'badge_' + num + '.svg';
+    img.alt = b.name;
+    img.onerror = function() { this.style.display = 'none'; };
+
+    var tag = document.createElement('span');
+    tag.className = 'track-tag';
+    tag.style.color = color;
+    tag.style.borderColor = color + '40';
+    tag.style.background = color + '10';
+    tag.textContent = b.track.toUpperCase();
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'badge-name';
+    nameEl.textContent = b.name;
+
+    var reqEl = document.createElement('div');
+    reqEl.className = 'requirement';
+    reqEl.textContent = b.req;
+
+    var pill = document.createElement('span');
+    pill.className = 'score-pill';
+    pill.style.color = color;
+    pill.style.borderColor = color + '40';
+    pill.textContent = '+' + b.score + ' pts';
+
+    card.appendChild(img);
+    card.appendChild(tag);
+    card.appendChild(nameEl);
+    card.appendChild(reqEl);
+    card.appendChild(pill);
+    grid.appendChild(card);
+  });
+
+  sections.appendChild(grid);
+});
+</script>
+
+</body>
+</html>

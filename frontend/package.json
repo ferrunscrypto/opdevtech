@@ -1,0 +1,32 @@
+{
+    "name": "devtech-frontend",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "dev.tech — BTC-Native Identity & Achievement Protocol",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    },
+    "dependencies": {
+        "@btc-vision/bitcoin": "latest",
+        "@btc-vision/transaction": "1.8.0-rc.9",
+        "@btc-vision/walletconnect": "latest",
+        "opnet": "1.8.1-rc.12",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-router-dom": "^7.7.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.2.1",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.4",
+        "tailwindcss": "^4.2.1",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.1",
+        "vite-plugin-node-polyfills": "^0.25.0"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "devtech-contract",
+    "version": "1.0.0",
+    "description": "dev.tech — BTC-Native Identity & Achievement Protocol",
+    "scripts": {
+        "build": "asc src/index.ts --config asconfig.json --target debug",
+        "clean": "rm -rf build/*",
+        "postinstall": "npx patch-package"
+    },
+    "dependencies": {
+        "@btc-vision/as-bignum": "latest",
+        "@btc-vision/btc-runtime": "latest",
+        "@btc-vision/opnet-transform": "latest",
+        "dotenv": "^17.3.1"
+    },
+    "devDependencies": {
+        "assemblyscript": "^0.27.32",
+        "patch-package": "^8.0.0"
+    }
+}
