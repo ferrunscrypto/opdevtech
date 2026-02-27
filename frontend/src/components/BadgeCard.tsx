@@ -10,7 +10,7 @@ interface BadgeCardProps {
 }
 
 const BADGE_IMG: Record<number, string> = {};
-for (let i = 1; i <= 15; i++) {
+for (let i = 1; i <= 17; i++) {
     BADGE_IMG[i] = `/badges/badge_${String(i).padStart(2, '0')}.svg`;
 }
 
@@ -91,7 +91,7 @@ export function BadgeCard({ badge, status, onMint, minting }: BadgeCardProps) {
 
             {/* Name */}
             <div style={{
-                fontFamily: 'monospace', fontSize: '12px', fontWeight: 700,
+                fontFamily: 'monospace', fontSize: '13px', fontWeight: 700,
                 color: isLocked ? '#94a3b8' : '#e2e8f0',
                 textAlign: 'center', lineHeight: 1.3,
             }}>
@@ -103,12 +103,20 @@ export function BadgeCard({ badge, status, onMint, minting }: BadgeCardProps) {
                 fontSize: '10px', color: isLocked ? '#64748b' : '#94a3b8',
                 textAlign: 'center', fontFamily: 'monospace', lineHeight: 1.4, minHeight: '28px',
             }}>
-                {badge.requirement}
+                {badge.link ? (
+                    <a href={badge.link} target="_blank" rel="noopener noreferrer" style={{
+                        color: isLocked ? '#64748b' : badge.color,
+                        textDecoration: 'underline',
+                        textDecorationColor: isLocked ? '#374151' : badge.color + '60',
+                    }}>
+                        {badge.requirement}
+                    </a>
+                ) : badge.requirement}
             </div>
 
             {/* Score */}
             <div style={{
-                fontSize: '12px', fontWeight: 700, fontFamily: 'monospace',
+                fontSize: '13px', fontWeight: 700, fontFamily: 'monospace',
                 color: isLocked ? '#475569' : badge.color,
             }}>
                 +{badge.score} pts
@@ -135,7 +143,7 @@ export function BadgeCard({ badge, status, onMint, minting }: BadgeCardProps) {
                         background: minting ? 'rgba(255,255,255,0.03)' : `${badge.color}28`,
                         border: `1px solid ${minting ? badge.color + '15' : badge.color + '50'}`,
                         color: minting ? '#64748b' : badge.color,
-                        fontFamily: 'monospace', fontSize: '11px', fontWeight: 700,
+                        fontFamily: 'monospace', fontSize: '12px', fontWeight: 700,
                         cursor: minting ? 'not-allowed' : 'pointer', letterSpacing: '0.06em',
                         opacity: minting ? 0.6 : 1,
                         transition: 'all 0.15s ease',

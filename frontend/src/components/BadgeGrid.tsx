@@ -6,12 +6,13 @@ interface BadgeGridProps {
     eligibleIds:  number[];
     mintingId:    number | null;
     onMint:       (badgeId: number) => void;
+    isOwnProfile: boolean;
 }
 
-export function BadgeGrid({ earnedIds, eligibleIds, mintingId, onMint }: BadgeGridProps) {
+export function BadgeGrid({ earnedIds, eligibleIds, mintingId, onMint, isOwnProfile }: BadgeGridProps) {
     const earned    = BADGE_META.filter(b => earnedIds.includes(b.id));
-    const available = BADGE_META.filter(b => !earnedIds.includes(b.id) && eligibleIds.includes(b.id));
-    const locked    = BADGE_META.filter(b => !earnedIds.includes(b.id) && !eligibleIds.includes(b.id));
+    const available = isOwnProfile ? BADGE_META.filter(b => !earnedIds.includes(b.id) && eligibleIds.includes(b.id)) : [];
+    const locked    = isOwnProfile ? BADGE_META.filter(b => !earnedIds.includes(b.id) && !eligibleIds.includes(b.id)) : [];
 
     const gridStyle: React.CSSProperties = {
         display: 'grid',
@@ -21,7 +22,7 @@ export function BadgeGrid({ earnedIds, eligibleIds, mintingId, onMint }: BadgeGr
 
     const sectionLabel = (text: string, count: number, color: string) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-            <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color, letterSpacing: '0.12em' }}>{text}</span>
+            <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color, letterSpacing: '0.12em' }}>{text}</span>
             <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#374151', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>{count}</span>
         </div>
     );
@@ -41,7 +42,7 @@ export function BadgeGrid({ earnedIds, eligibleIds, mintingId, onMint }: BadgeGr
 
             {available.length > 0 && (
                 <section>
-                    {sectionLabel('AVAILABLE', available.length, '#3b82f6')}
+                    {sectionLabel('AVAILABLE', available.length, '#fb923c')}
                     <div style={gridStyle}>
                         {available.map(b => (
                             <BadgeCard

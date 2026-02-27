@@ -18,6 +18,8 @@ interface ProfileCardProps {
     isOwnProfile?: boolean;
     onEndorse?: () => void;
     endorsing?: boolean;
+    onRecheckFollowing?: () => void;
+    recheckingFollow?: boolean;
 }
 
 function scoreLevel(score: number): { level: number; label: string; next: number } {
@@ -36,10 +38,9 @@ const card = {
     borderRadius: '16px',
 };
 
-export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp, displayName, editingName, nameInput, onNameInputChange, onEditName, onLinkTwitter, onShare, onRescan, scanning, isOwnProfile, onEndorse, endorsing }: ProfileCardProps) {
-    const onChainScore = profile ? Number(profile.score) : 0;
-    const scanScore    = scan?.score ?? 0;
-    const totalScore   = onChainScore + scanScore;
+export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp, displayName, editingName, nameInput, onNameInputChange, onEditName, onLinkTwitter, onShare, onRescan, scanning, isOwnProfile, onEndorse, endorsing, onRecheckFollowing, recheckingFollow }: ProfileCardProps) {
+    // Score = badge points only (accumulated on-chain when badges are minted)
+    const totalScore = profile ? Number(profile.score) : 0;
     const badgeCount   = profile ? Number(profile.badgeCount) : 0;
     const endorseCount = profile ? Number(profile.endorseCount) : 0;
     const { level, label, next } = scoreLevel(totalScore);
@@ -58,14 +59,14 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
             {/* Top row: PFP + identity */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 {twitterPfp ? (
-                    <img src={twitterPfp} alt="PFP" style={{ width: '72px', height: '72px', borderRadius: '50%', border: '2px solid rgba(59,130,246,0.25)', objectFit: 'cover' }} />
+                    <img src={twitterPfp} alt="PFP" style={{ width: '72px', height: '72px', borderRadius: '50%', border: '2px solid rgba(251,146,60,0.25)', objectFit: 'cover' }} />
                 ) : (
                     <div style={{
                         width: '72px', height: '72px', borderRadius: '50%',
                         background: 'linear-gradient(135deg, #1e2a4a 0%, #1a2040 100%)',
-                        border: '2px solid rgba(59,130,246,0.2)',
+                        border: '2px solid rgba(251,146,60,0.2)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '28px', color: '#60a5fa',
+                        fontSize: '28px', color: '#fdba74',
                     }}>
                         {(displayName ?? address.charAt(4)).charAt(0).toUpperCase()}
                     </div>
@@ -80,7 +81,7 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                                 autoFocus
                                 style={{
                                     fontFamily: 'monospace', fontWeight: 700, fontSize: '16px', color: '#e2e8f0',
-                                    background: '#0f1220', border: '1px solid rgba(59,130,246,0.3)',
+                                    background: '#0f1220', border: '1px solid rgba(251,146,60,0.3)',
                                     borderRadius: '6px', padding: '3px 8px', outline: 'none', width: '140px',
                                 }}
                             />
@@ -91,21 +92,21 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                         )}
                         <button onClick={onEditName} style={{
                             background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
-                            fontFamily: 'monospace', fontSize: '11px', padding: '2px 4px',
+                            fontFamily: 'monospace', fontSize: '12px', padding: '2px 4px',
                         }}>
                             {editingName ? 'save' : 'edit'}
                         </button>
                     </div>
                     {twitterHandle && (
-                        <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#1da1f2', marginTop: '2px' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#1da1f2', marginTop: '2px' }}>
                             @{twitterHandle}
                         </div>
                     )}
-                    <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748b', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#64748b', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {shortAddr}
                     </div>
                     <div style={{ marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', color: '#60a5fa', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '10px', color: '#fdba74', fontFamily: 'monospace' }}>
                             Lv.{level} {label}
                         </span>
                         <span style={{ fontSize: '10px', padding: '2px 10px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px', color: '#4ade80', fontFamily: 'monospace' }}>
@@ -123,11 +124,11 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
             {/* Score bar */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>Score</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#60a5fa', fontFamily: 'monospace' }}>{totalScore.toLocaleString()} pts</span>
+                    <span style={{ fontSize: '13px', color: '#94a3b8', fontFamily: 'monospace' }}>Score</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#fdba74', fontFamily: 'monospace' }}>{totalScore.toLocaleString()} pts</span>
                 </div>
                 <div style={{ height: '5px', background: '#0f1220', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #3b82f6, #818cf8)', borderRadius: '3px', transition: 'width 0.8s ease' }} />
+                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #fb923c, #818cf8)', borderRadius: '3px', transition: 'width 0.8s ease' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                     <span style={{ fontSize: '10px', color: '#475569', fontFamily: 'monospace' }}>0</span>
@@ -154,6 +155,25 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
 
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {twitterHandle && onRecheckFollowing && (
+                    <button
+                        onClick={onRecheckFollowing}
+                        disabled={recheckingFollow}
+                        className="profile-btn"
+                        style={{
+                            flex: 1, minWidth: '100px', padding: '10px 14px',
+                            background: recheckingFollow ? 'rgba(29,161,242,0.06)' : 'rgba(29,161,242,0.12)',
+                            border: `1px solid rgba(29,161,242,${recheckingFollow ? '0.15' : '0.3'})`,
+                            borderRadius: '10px', color: '#1da1f2', fontFamily: 'monospace',
+                            fontSize: '12px', fontWeight: 700,
+                            cursor: recheckingFollow ? 'wait' : 'pointer',
+                            opacity: recheckingFollow ? 0.6 : 1,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        {recheckingFollow ? 'Checking...' : 'Refresh X'}
+                    </button>
+                )}
                 {!twitterHandle && (
                     <button
                         onClick={onLinkTwitter}
@@ -162,7 +182,7 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                             flex: 1, minWidth: '100px', padding: '10px 14px',
                             background: 'rgba(29,161,242,0.18)', border: '1px solid rgba(29,161,242,0.4)',
                             borderRadius: '10px', color: '#1da1f2', fontFamily: 'monospace',
-                            fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                             transition: 'all 0.15s ease',
                         }}
                     >
@@ -174,9 +194,9 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                     className="profile-btn"
                     style={{
                         flex: 1, minWidth: '100px', padding: '10px 14px',
-                        background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.4)',
-                        borderRadius: '10px', color: '#60a5fa', fontFamily: 'monospace',
-                        fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                        background: 'rgba(251,146,60,0.18)', border: '1px solid rgba(251,146,60,0.4)',
+                        borderRadius: '10px', color: '#fdba74', fontFamily: 'monospace',
+                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                         transition: 'all 0.15s ease',
                     }}
                 >
@@ -191,7 +211,7 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                         background: scanning ? 'rgba(74,222,128,0.1)' : 'rgba(74,222,128,0.18)',
                         border: `1px solid rgba(74,222,128,${scanning ? '0.2' : '0.4'})`,
                         borderRadius: '10px', color: '#4ade80', fontFamily: 'monospace',
-                        fontSize: '11px', fontWeight: 700,
+                        fontSize: '12px', fontWeight: 700,
                         cursor: scanning ? 'wait' : 'pointer',
                         opacity: scanning ? 0.6 : 1,
                         transition: 'all 0.15s ease',
@@ -209,7 +229,7 @@ export function ProfileCard({ address, profile, scan, twitterHandle, twitterPfp,
                             background: endorsing ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.18)',
                             border: `1px solid rgba(168,85,247,${endorsing ? '0.2' : '0.4'})`,
                             borderRadius: '10px', color: '#a855f7', fontFamily: 'monospace',
-                            fontSize: '11px', fontWeight: 700,
+                            fontSize: '12px', fontWeight: 700,
                             cursor: endorsing ? 'wait' : 'pointer',
                             opacity: endorsing ? 0.6 : 1,
                             transition: 'all 0.15s ease',

@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
 import { getContract, JSONRpcProvider } from 'opnet';
 import type { BitcoinInterfaceAbi } from 'opnet';
-import { Network } from '@btc-vision/bitcoin';
+import { networks, Network } from '@btc-vision/bitcoin';
 import type { Address } from '@btc-vision/transaction';
 import { DevTechABI } from '../abi/DevTechABI';
-import { DEVTECH_ADDRESS, BACKEND_URL } from '../config/contracts';
+import { DEVTECH_ADDRESS } from '../config/contracts';
+import { scanAddress, type ScanResult as ScannerResult } from '../utils/scanner';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyContract = any;
 
-export interface ScanResult {
+export type ScanResult = {
     address:        string;
     deployments:    number;
     swaps:          number;
@@ -19,7 +20,7 @@ export interface ScanResult {
     firstBlock:     number;
     score:          number;
     eligibleBadges: number[];
-}
+};
 
 export interface ProfileData {
     handleHash:   bigint;
@@ -30,7 +31,7 @@ export interface ProfileData {
 }
 
 export function useDevTech(
-    provider: JSONRpcProvider | null,
+    provider: JSONRpcProvider,
     network: Network | null | undefined,
     senderAddress: Address | null,
     walletAddress: string | null,
@@ -43,16 +44,16 @@ export function useDevTech(
         return provider!.getPublicKeyInfo(bech32, isContract);
     }
 
-    /** Read-only contract instance (no sender needed) */
+    /** Read-only contract instance — uses testnet as fallback when no wallet connected */
     function getReadContract(): AnyContract | null {
-        if (!provider || !network) return null;
         if (!DEVTECH_ADDRESS || DEVTECH_ADDRESS.includes('TODO')) return null;
+        const readNetwork = network ?? (networks as unknown as Record<string, Network>)['opnetTestnet'];
         try {
             return getContract<AnyContract>(
                 DEVTECH_ADDRESS,
                 DevTechABI as BitcoinInterfaceAbi,
                 provider,
-                network,
+                readNetwork,
             );
         } catch {
             return null;
@@ -61,7 +62,7 @@ export function useDevTech(
 
     /** Write contract instance — includes sender so Blockchain.tx.sender is set during simulation */
     function getWriteContract(): AnyContract | null {
-        if (!provider || !network || !senderAddress) return null;
+        if (!network || !senderAddress) return null;
         if (!DEVTECH_ADDRESS || DEVTECH_ADDRESS.includes('TODO')) return null;
         try {
             return getContract<AnyContract>(
@@ -102,17 +103,20 @@ export function useDevTech(
 
     const loadScan = useCallback(async (address: string): Promise<ScanResult | null> => {
         try {
-            const res = await fetch(`${BACKEND_URL}/api/scan/${address}`);
-            if (!res.ok) return null;
-            return await res.json() as ScanResult;
-        } catch {
+            const result: ScannerResult = await scanAddress(provider, address);
+            return {
+                ...result,
+                gasSpent: result.gasSpent.toString(),
+            };
+        } catch (e) {
+            console.error('[loadScan] Error:', e);
             return null;
         }
-    }, []);
+    }, [provider]);
 
     const loadProfile = useCallback(async (address: string): Promise<ProfileData | null> => {
         const contract = getReadContract();
-        if (!contract || !provider) return null;
+        if (!contract) return null;
         try {
             const addrObj = await resolveAddress(address, false);
             const result = await contract._getProfile(addrObj);
@@ -132,7 +136,7 @@ export function useDevTech(
 
     const loadMintedBadges = useCallback(async (address: string): Promise<number[]> => {
         const contract = getReadContract();
-        if (!contract || !provider) return [];
+        if (!contract) return [];
         try {
             const addrObj = await resolveAddress(address, false);
             const balResult = await contract.balanceOf(addrObj);
@@ -145,7 +149,15 @@ export function useDevTech(
                 const tokenId = BigInt(tokResult?.properties?.['tokenId'] ?? 0);
                 const typeResult = await contract._getBadgeType(tokenId);
                 const badgeId = Number(typeResult?.properties?.['badgeId'] ?? 0);
-                if (badgeId > 0) badges.push(badgeId);
+                if (badgeId > 0) {
+                    badges.push(badgeId);
+                    // Keep KV in sync — re-register every load so missed mints get fixed
+                    fetch('/api/nft/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tokenId: String(tokenId), badgeId }),
+                    }).catch(() => {});
+                }
             }
             return badges;
         } catch (e) {
@@ -156,7 +168,7 @@ export function useDevTech(
 
     const hasClaimed = useCallback(async (address: string, badgeId: number): Promise<boolean> => {
         const contract = getReadContract();
-        if (!contract || !provider) return false;
+        if (!contract) return false;
         try {
             const addrObj = await resolveAddress(address, false);
             const result = await contract._hasClaimed(addrObj, BigInt(badgeId));
@@ -188,6 +200,17 @@ export function useDevTech(
             console.log('[claimBadge] Simulation OK, sending tx...');
             const txId = await sendSimulation(simulation);
             console.log('[claimBadge] TX sent:', txId);
+
+            // Register tokenId→badgeId mapping for NFT metadata
+            try {
+                const tokenId = String(simulation.properties?.['tokenId'] ?? '0');
+                fetch('/api/nft/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tokenId, badgeId }),
+                }).catch(() => {});
+            } catch { /* non-critical */ }
+
             return txId;
         } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);

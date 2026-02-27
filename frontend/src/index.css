@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Override system Courier New with JetBrains Mono for better readability at small sizes */
+@font-face {
+    font-family: 'Courier New';
+    src: local('JetBrains Mono'), url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4xD-IQ.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Courier';
+    src: local('JetBrains Mono'), url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4xD-IQ.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: swap;
+}
+
 :root {
     --bg: #0c0f1a;
     --bg-card: #141827;
@@ -23,8 +37,10 @@
 body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Inter', 'JetBrains Mono', 'Courier New', Courier, monospace;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar { width: 6px; }

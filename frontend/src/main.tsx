@@ -1,6 +1,6 @@
 import { StrictMode, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { WalletConnectProvider } from '@btc-vision/walletconnect';
+import { LazyWalletProvider } from './contexts/WalletContext';
 import { App } from './App';
 import './index.css';
 
@@ -32,11 +32,11 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <ErrorBoundary>
-            <WalletConnectProvider theme="dark">
+            <LazyWalletProvider>
                 <ErrorBoundary>
                     <App />
                 </ErrorBoundary>
-            </WalletConnectProvider>
+            </LazyWalletProvider>
         </ErrorBoundary>
     </StrictMode>,
 );

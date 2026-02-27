@@ -143,6 +143,7 @@ export interface BadgeMeta {
     color: string;
     requirement: string;
     score: number;
+    link?: string;
 }
 
 export const BADGE_META: BadgeMeta[] = [
@@ -154,10 +155,12 @@ export const BADGE_META: BadgeMeta[] = [
     { id: 6,  name: 'Swap Veteran',     track: 'Trader',     color: '#4ade80', requirement: '100+ swaps',                      score: 400  },
     { id: 7,  name: 'Gas Burner',       track: 'Gas',        color: '#f97316', requirement: '50k+ sats in gas spent',          score: 75   },
     { id: 8,  name: 'Inferno',          track: 'Gas',        color: '#f97316', requirement: '500k+ sats in gas spent',         score: 200  },
-    { id: 9,  name: 'OPNet OG',         track: 'OG',         color: '#eab308', requirement: 'First tx before block 50,000',    score: 300  },
-    { id: 10, name: 'Early Adopter',    track: 'OG',         color: '#eab308', requirement: 'First tx before block 100,000',   score: 150  },
+    { id: 9,  name: 'OPNet OG',         track: 'OG',         color: '#eab308', requirement: 'First tx before block 500',      score: 300  },
+    { id: 10, name: 'Early Adopter',    track: 'OG',         color: '#eab308', requirement: 'First tx before block 1,000',    score: 150  },
     { id: 11, name: 'Linked',           track: 'Social',     color: '#a855f7', requirement: 'Twitter profile set on-chain',    score: 25   },
     { id: 12, name: 'Vouched',          track: 'Social',     color: '#a855f7', requirement: 'Endorsed by 3+ other addresses',  score: 100  },
+    { id: 16, name: 'OPNet Ally',       track: 'Social',     color: '#a855f7', requirement: 'Following @opnetbtc on X',         score: 50,  link: 'https://x.com/opnetbtc'        },
+    { id: 17, name: 'CatPound Pack',    track: 'Social',     color: '#c084fc', requirement: 'Following @catpoundfinance on X',  score: 50, link: 'https://x.com/catpoundfinance'  },
     { id: 13, name: 'Battle Hardened',  track: 'Resilience', color: '#ef4444', requirement: '5+ failed transactions',          score: 50   },
     { id: 14, name: 'Diamond Hands',    track: 'Resilience', color: '#ef4444', requirement: '0 failed txs + 20+ successful',   score: 200  },
     { id: 15, name: 'OPNet Legend',     track: 'Master',     color: '#fbbf24', requirement: '5+ different badges held',        score: 1000 },

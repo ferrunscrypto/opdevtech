@@ -5,10 +5,16 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-    base: './',
+    base: '/',
     server: {
         port: 5173,
         strictPort: true,
+        proxy: {
+            '/api': {
+                target: 'https://opdev-tech.pages.dev',
+                changeOrigin: true,
+            },
+        },
     },
     plugins: [
         tailwindcss(),

@@ -73,28 +73,7 @@ const profileHasTwitterPointer: u16 = Blockchain.nextPointer;
 
 // ── Base64 encoder ────────────────────────────────────────────────────────────
 
-function base64Encode(input: string): string {
-    const TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    const bytes = Uint8Array.wrap(String.UTF8.encode(input));
-    const len = bytes.length;
-    let result = '';
-    let i = 0;
-
-    while (i < len) {
-        const b0: u32 = bytes[i];
-        const b1: u32 = i + 1 < len ? bytes[i + 1] : 0;
-        const b2: u32 = i + 2 < len ? bytes[i + 2] : 0;
-
-        result += TABLE.charAt(i32((b0 >> 2) & 63));
-        result += TABLE.charAt(i32(((b0 & 3) << 4) | (b1 >> 4)));
-        result += i + 1 < len ? TABLE.charAt(i32(((b1 & 15) << 2) | (b2 >> 6))) : '=';
-        result += i + 2 < len ? TABLE.charAt(i32(b2 & 63)) : '=';
-        i += 3;
-    }
-    return result;
-}
-
-// ── Static badge metadata (name, track color, icon) ──────────────────────────
+// ── Static badge metadata (name, track color) ────────────────────────────────
 
 function getBadgeName(badgeId: u32): string {
     if (badgeId == 1)  return 'First Deploy';
@@ -112,6 +91,8 @@ function getBadgeName(badgeId: u32): string {
     if (badgeId == 13) return 'Battle Hardened';
     if (badgeId == 14) return 'Diamond Hands';
     if (badgeId == 15) return 'OPNet Legend';
+    if (badgeId == 16) return 'OPNet Ally';
+    if (badgeId == 17) return 'CatPound Pack';
     return 'Custom Badge';
 }
 
@@ -120,29 +101,11 @@ function getBadgeColor(badgeId: u32): string {
     if (badgeId >= 4 && badgeId <= 6)  return '#4ade80'; // Trader: green
     if (badgeId >= 7 && badgeId <= 8)  return '#f97316'; // Gas: orange
     if (badgeId >= 9 && badgeId <= 10) return '#eab308'; // OG: gold
-    if (badgeId >= 11 && badgeId <= 12) return '#a855f7'; // Social: purple
+    if (badgeId == 11 || badgeId == 12 || badgeId == 16) return '#a855f7'; // Social: purple
+    if (badgeId == 17) return '#c084fc'; // Social high-value: light purple
     if (badgeId >= 13 && badgeId <= 14) return '#ef4444'; // Resilience: red
     if (badgeId == 15) return '#fbbf24'; // Master: gold
     return '#6b7280'; // Unknown: gray
-}
-
-function getBadgeIcon(badgeId: u32): string {
-    if (badgeId == 1)  return 'DEPLOY';
-    if (badgeId == 2)  return 'ARCH';
-    if (badgeId == 3)  return 'FACTORY';
-    if (badgeId == 4)  return 'SWAP';
-    if (badgeId == 5)  return 'TRADE';
-    if (badgeId == 6)  return 'VET';
-    if (badgeId == 7)  return 'GAS';
-    if (badgeId == 8)  return 'INFERNO';
-    if (badgeId == 9)  return 'OG';
-    if (badgeId == 10) return 'EARLY';
-    if (badgeId == 11) return 'LINK';
-    if (badgeId == 12) return 'VOUCH';
-    if (badgeId == 13) return 'BATTLE';
-    if (badgeId == 14) return 'DIAMOND';
-    if (badgeId == 15) return 'LEGEND';
-    return 'BADGE';
 }
 
 // ── Initial badge scores ──────────────────────────────────────────────────────
@@ -163,6 +126,8 @@ function getInitialScore(badgeId: u32): u64 {
     if (badgeId == 13) return 50;
     if (badgeId == 14) return 200;
     if (badgeId == 15) return 1000;
+    if (badgeId == 16) return 50;
+    if (badgeId == 17) return 50;
     return 0;
 }
 
@@ -202,18 +167,18 @@ export class DevTech extends OP721 {
 
     public override onDeployment(_calldata: Calldata): void {
         this.instantiate(new OP721InitParameters(
-            'dev.tech',
-            'DEVT',
-            'https://devtech.pages.dev/badges/',
+            'opdev.tech',
+            'OPDEV',
+            'https://opdev-tech.pages.dev/badges/',
             u256.fromU64(999999),
-            'https://devtech.pages.dev/banner.png',
-            'https://devtech.pages.dev/icon.png',
-            'https://devtech.pages.dev',
+            'https://opdev-tech.pages.dev/banner.png',
+            'https://opdev-tech.pages.dev/icon.png',
+            'https://opdev-tech.pages.dev',
             'Bitcoin on-chain identity & achievement badges',
         ));
 
-        // Seed the badge registry with all 15 initial badges
-        for (let i: u32 = 1; i <= 15; i++) {
+        // Seed the badge registry with all 17 initial badges
+        for (let i: u32 = 1; i <= 17; i++) {
             const badgeId = u256.fromU32(i);
             const scoreVal = u256.fromU64(getInitialScore(i));
             this._badgeScoreMap.set(badgeId, scoreVal);
@@ -260,7 +225,7 @@ export class DevTech extends OP721 {
         throw new Revert('Soulbound: non-transferable');
     }
 
-    // ── On-chain SVG tokenURI override ────────────────────────────────────────
+    // ── tokenURI: returns HTTPS metadata URL (wallet-compatible) ─────────────
 
     @method({ name: 'tokenId', type: ABIDataTypes.UINT256 })
     @returns({ name: 'uri', type: ABIDataTypes.STRING })
@@ -268,27 +233,7 @@ export class DevTech extends OP721 {
         const tokenId = calldata.readU256();
         if (!this._exists(tokenId)) throw new Revert('Token does not exist');
 
-        const badgeId = this._badgeType.get(tokenId).toU32();
-        const name    = getBadgeName(badgeId);
-        const color   = getBadgeColor(badgeId);
-        const icon    = getBadgeIcon(badgeId);
-        const score   = this._badgeScoreMap.get(u256.fromU32(badgeId)).toString();
-
-        const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">'
-            + '<rect width="512" height="512" rx="40" fill="#0a0b0f"/>'
-            + '<circle cx="256" cy="256" r="240" fill="none" stroke="' + color + '" stroke-width="8"/>'
-            + '<text x="256" y="220" text-anchor="middle" fill="' + color + '" font-size="40" font-family="monospace" font-weight="bold">' + icon + '</text>'
-            + '<text x="256" y="290" text-anchor="middle" fill="#ffffff" font-size="26" font-family="monospace">' + name + '</text>'
-            + '<text x="256" y="335" text-anchor="middle" fill="#888888" font-size="20" font-family="monospace">+' + score + ' pts</text>'
-            + '<text x="256" y="470" text-anchor="middle" fill="' + color + '" font-size="14" font-family="monospace" opacity="0.6">dev.tech on OPNet</text>'
-            + '</svg>';
-
-        const svgB64 = base64Encode(svg);
-        const json = '{"name":"' + name + '","description":"dev.tech soulbound achievement badge on Bitcoin via OPNet",'
-            + '"image":"data:image/svg+xml;base64,' + svgB64 + '",'
-            + '"attributes":[{"trait_type":"Score","value":' + score + '},{"trait_type":"Badge ID","value":' + badgeId.toString() + '}]}';
-        const jsonB64 = base64Encode(json);
-        const uri = 'data:application/json;base64,' + jsonB64;
+        const uri = 'https://opdev-tech.pages.dev/api/nft/' + tokenId.toString();
 
         const w = new BytesWriter(String.UTF8.byteLength(uri) + 4);
         w.writeStringWithLength(uri);
