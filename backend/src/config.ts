@@ -11,4 +11,4 @@ export const config = {
 };
 
 export const MOTOSWAP_ROUTER = '0x0e6ff1f2d7db7556cb37729e3738f4dae82659b984b2621fab08e1111b1b937a';
-export const DEVTECH_ADDRESS = process.env['DEVTECH_ADDRESS'] ?? 'opt1sqr6x7mejkufn7n9xkue6k6s9xlq2xvxkzvv3w8ap';
+export const DEVTECH_ADDRESS = process.env['DEVTECH_ADDRESS'] ?? 'opt1sqry9v4jmavvlju2znyvw59v2khlymrx9usfargz5';

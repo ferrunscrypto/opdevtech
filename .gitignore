@@ -29,3 +29,17 @@ Thumbs.db
 
 # Patches (local btc-runtime fix)
 patches/
+
+# Local dev docs & guides
+CLAUDE.md
+contract-development.md
+contract-interaction-guide.md
+frontend-development.md
+project-setup.md
+security-audit-checklist.md
+wallet-connect-guide.md
+eslint-configs/
+examples/
+
+# Wrangler (Cloudflare)
+frontend/.wrangler/
